@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../booking/presentation/screens/booking_screen.dart';
+import '../../../booking/presentation/screens/bookings_screen.dart';
 import '../../domain/models/room.dart';
 import '../providers/rooms_provider.dart';
 import '../widgets/room_card.dart';
@@ -30,7 +31,19 @@ class HomeScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.appName)),
+      appBar: AppBar(
+        title: const Text(AppStrings.appName),
+        actions: [
+          IconButton(
+            tooltip: AppStrings.bookings,
+            icon: const Icon(Icons.event_note_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const BookingsScreen()),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,17 +70,33 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                itemCount: rooms.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final room = rooms[index];
-                  return RoomCard(
-                    room: room,
-                    onTap: () => _onRoomTap(context, room),
-                  );
-                },
+              child: rooms.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(AppStrings.loadFailed),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: () => ref.invalidate(roomsProvider),
+                        child: const Text(AppStrings.retry),
+                      ),
+                    ],
+                  ),
+                ),
+                data: (rooms) => ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  itemCount: rooms.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final room = rooms[index];
+                    return RoomCard(
+                      room: room,
+                      onTap: () => _onRoomTap(context, room),
+                    );
+                  },
+                ),
               ),
             ),
           ],

@@ -20,25 +20,34 @@ class BookingScreen extends ConsumerStatefulWidget {
 }
 
 class _BookingScreenState extends ConsumerState<BookingScreen> {
+  final _nameController = TextEditingController();
   late final List<DateTime> _dates;
-  late DateTime _selectedDate;
+  DateTime? _selectedDate;
   DateTime? _selectedSlot;
+  bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
-    final now = ref.read(clockProvider)();
-    final booked = ref.read(bookedSlotsProvider(widget.roomId));
-    _dates = BookingRules.bookableDates(now);
-    // Start on the first day that still has a free slot (e.g. skip today
-    // when opened after the last slot has passed).
-    _selectedDate = _dates.firstWhere(
-      (d) => BookingRules.slotsFor(
-        d,
-      ).any((s) => !BookingRules.isPast(s, now) && !booked.contains(s)),
-      orElse: () => _dates.first,
-    );
+    _dates = BookingRules.bookableDates(ref.read(clockProvider)());
+    _nameController.addListener(() => setState(() {}));
   }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  /// First day that still has a free slot (e.g. skip today when opened after
+  /// the last slot has passed).
+  DateTime _firstOpenDate(Set<DateTime> booked, DateTime now) =>
+      _dates.firstWhere(
+        (d) => BookingRules.slotsFor(
+          d,
+        ).any((s) => !BookingRules.isPast(s, now) && !booked.contains(s)),
+        orElse: () => _dates.first,
+      );
 
   void _selectDate(DateTime date) => setState(() {
     _selectedDate = date;
@@ -47,24 +56,41 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   void _selectSlot(DateTime slot) => setState(() => _selectedSlot = slot);
 
-  void _confirm(String roomName) {
+  Future<void> _confirm(String roomName) async {
     final slot = _selectedSlot;
-    if (slot == null) return;
+    if (slot == null || _submitting) return;
+    FocusScope.of(context).unfocus();
     final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    void show(String message) => messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
 
+    setState(() => _submitting = true);
     try {
-      ref
+      await ref
           .read(bookingsProvider.notifier)
-          .book(roomId: widget.roomId, start: slot);
+          .book(
+            roomId: widget.roomId,
+            start: slot,
+            customerName: _nameController.text,
+          );
     } on BookingException catch (e) {
-      setState(() => _selectedSlot = null);
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(e.message)));
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _selectedSlot = null;
+      });
+      show(e.message);
+      return;
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      show(AppStrings.saveFailed);
       return;
     }
 
-    Navigator.of(context).pop();
+    navigator.pop();
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -90,15 +116,28 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final rooms = ref.watch(roomsProvider);
-    final room = rooms.where((r) => r.id == widget.roomId).firstOrNull;
-    if (room == null) {
-      return Scaffold(appBar: AppBar(), body: const SizedBox.shrink());
+    final room = ref
+        .watch(roomsProvider)
+        .value
+        ?.where((r) => r.id == widget.roomId)
+        .firstOrNull;
+    final bookings = ref.watch(bookingsProvider);
+
+    if (room == null || !bookings.hasValue) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: bookings.hasError
+              ? const Text(AppStrings.loadFailed)
+              : const CircularProgressIndicator(),
+        ),
+      );
     }
 
     final now = ref.read(clockProvider)();
     final booked = ref.watch(bookedSlotsProvider(widget.roomId));
-    final slots = BookingRules.slotsFor(_selectedDate);
+    final selectedDate = _selectedDate ??= _firstOpenDate(booked, now);
+    final slots = BookingRules.slotsFor(selectedDate);
 
     SlotState stateOf(DateTime slot) {
       if (booked.contains(slot)) return SlotState.booked;
@@ -111,6 +150,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       final st = stateOf(s);
       return st == SlotState.booked || st == SlotState.past;
     });
+    final hasName = _nameController.text.trim().isNotEmpty;
     final theme = Theme.of(context);
     final sectionStyle = theme.textTheme.titleMedium?.copyWith(
       fontWeight: FontWeight.w600,
@@ -122,12 +162,32 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
           Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            child: TextField(
+              key: const ValueKey('customer-name'),
+              controller: _nameController,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
+              autofillHints: const [AutofillHints.name],
+              decoration: const InputDecoration(
+                labelText: AppStrings.yourName,
+                hintText: AppStrings.yourNameHint,
+                prefixIcon: Icon(Icons.person_outline),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                ),
+              ),
+            ),
+          ),
+          Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Text(AppStrings.selectDate, style: sectionStyle),
           ),
           DateSelector(
             dates: _dates,
-            selected: _selectedDate,
+            selected: selectedDate,
             onSelected: _selectDate,
           ),
           Padding(
@@ -152,19 +212,29 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         ],
       ),
       bottomNavigationBar: _ConfirmBar(
-        summary: _selectedSlot == null
-            ? AppStrings.pickASlot
-            : Formatters.dateAndTime(_selectedSlot!),
-        onConfirm: _selectedSlot == null ? null : () => _confirm(room.name),
+        summary: switch ((_selectedSlot, hasName)) {
+          (null, _) => AppStrings.pickASlot,
+          (_, false) => AppStrings.enterName,
+          (final slot?, true) => Formatters.dateAndTime(slot),
+        },
+        submitting: _submitting,
+        onConfirm: _selectedSlot == null || !hasName || _submitting
+            ? null
+            : () => _confirm(room.name),
       ),
     );
   }
 }
 
 class _ConfirmBar extends StatelessWidget {
-  const _ConfirmBar({required this.summary, required this.onConfirm});
+  const _ConfirmBar({
+    required this.summary,
+    required this.submitting,
+    required this.onConfirm,
+  });
 
   final String summary;
+  final bool submitting;
   final VoidCallback? onConfirm;
 
   @override
@@ -192,10 +262,18 @@ class _ConfirmBar extends StatelessWidget {
                 height: 52,
                 child: FilledButton(
                   onPressed: onConfirm,
-                  child: const Text(
-                    AppStrings.confirmBooking,
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
+                  child: submitting
+                      ? const SizedBox.square(
+                          dimension: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        )
+                      : const Text(
+                          AppStrings.confirmBooking,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],

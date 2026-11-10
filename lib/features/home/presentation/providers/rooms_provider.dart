@@ -1,32 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/room_repository.dart';
+import '../../../../core/database/database_provider.dart';
+import '../../../../core/utils/clock.dart';
+import '../../data/sqlite_room_repository.dart';
 import '../../domain/models/room.dart';
+import '../../domain/room_repository.dart';
 
 final roomRepositoryProvider = Provider<RoomRepository>(
-  (ref) => const RoomRepository(),
+  (ref) => SqliteRoomRepository(ref.watch(databaseProvider)),
 );
 
-/// Holds the list of fitting rooms shown on the Home screen.
-class RoomsNotifier extends Notifier<List<Room>> {
+/// Rooms shown on the Home screen, loaded from the database.
+///
+/// Invalidate it after a write that can change a room's status.
+class RoomsNotifier extends AsyncNotifier<List<Room>> {
   @override
-  List<Room> build() => ref.watch(roomRepositoryProvider).getRooms();
+  Future<List<Room>> build() => ref
+      .watch(roomRepositoryProvider)
+      .getRooms(now: ref.read(clockProvider)());
 
-  Room? byId(String roomId) {
-    for (final room in state) {
-      if (room.id == roomId) return room;
-    }
-    return null;
-  }
-
-  void updateStatus(String roomId, RoomStatus status) {
-    state = [
-      for (final room in state)
-        room.id == roomId ? room.copyWith(status: status) : room,
-    ];
-  }
+  Room? byId(String roomId) =>
+      state.value?.where((r) => r.id == roomId).firstOrNull;
 }
 
-final roomsProvider = NotifierProvider<RoomsNotifier, List<Room>>(
+final roomsProvider = AsyncNotifierProvider<RoomsNotifier, List<Room>>(
   RoomsNotifier.new,
 );
