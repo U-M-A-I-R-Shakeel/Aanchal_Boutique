@@ -13,8 +13,9 @@ void main() {
     expect(rooms.map((r) => r.name), ['Room 1', 'Room 2', 'Room 3']);
   });
 
-  testWidgets('Home screen shows three room cards with status badges',
-      (tester) async {
+  testWidgets('Home screen shows three room cards with status badges', (
+    tester,
+  ) async {
     await tester.pumpWidget(const ProviderScope(child: AanchalBoutiqueApp()));
 
     expect(find.text('Room 1'), findsOneWidget);

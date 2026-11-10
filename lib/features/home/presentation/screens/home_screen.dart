@@ -2,11 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../booking/presentation/screens/booking_screen.dart';
+import '../../domain/models/room.dart';
 import '../providers/rooms_provider.dart';
 import '../widgets/room_card.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
+
+  void _onRoomTap(BuildContext context, Room room) {
+    if (!room.canBook) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(AppStrings.roomIsBusy(room.name))),
+        );
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => BookingScreen(roomId: room.id)),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -14,9 +30,7 @@ class HomeScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.appName),
-      ),
+      appBar: AppBar(title: const Text(AppStrings.appName)),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,8 +42,9 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   Text(
                     AppStrings.homeTitle,
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -46,7 +61,13 @@ class HomeScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 itemCount: rooms.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (_, index) => RoomCard(room: rooms[index]),
+                itemBuilder: (context, index) {
+                  final room = rooms[index];
+                  return RoomCard(
+                    room: room,
+                    onTap: () => _onRoomTap(context, room),
+                  );
+                },
               ),
             ),
           ],

@@ -11,6 +11,20 @@ final roomRepositoryProvider = Provider<RoomRepository>(
 class RoomsNotifier extends Notifier<List<Room>> {
   @override
   List<Room> build() => ref.watch(roomRepositoryProvider).getRooms();
+
+  Room? byId(String roomId) {
+    for (final room in state) {
+      if (room.id == roomId) return room;
+    }
+    return null;
+  }
+
+  void updateStatus(String roomId, RoomStatus status) {
+    state = [
+      for (final room in state)
+        room.id == roomId ? room.copyWith(status: status) : room,
+    ];
+  }
 }
 
 final roomsProvider = NotifierProvider<RoomsNotifier, List<Room>>(

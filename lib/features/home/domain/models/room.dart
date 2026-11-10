@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum RoomStatus { available, busy }
+enum RoomStatus { available, busy, booked }
 
 @immutable
 class Room {
@@ -12,11 +12,15 @@ class Room {
 
   bool get isAvailable => status == RoomStatus.available;
 
+  /// A room can take new bookings unless it is currently busy. Rooms the
+  /// customer has already booked stay bookable for other time slots.
+  bool get canBook => status != RoomStatus.busy;
+
   Room copyWith({String? id, String? name, RoomStatus? status}) => Room(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        status: status ?? this.status,
-      );
+    id: id ?? this.id,
+    name: name ?? this.name,
+    status: status ?? this.status,
+  );
 
   @override
   bool operator ==(Object other) =>

@@ -8,4 +8,9 @@ abstract final class AppColors {
   static const availableBg = Color(0xFFE8F5E9);
   static const busy = Color(0xFFC62828);
   static const busyBg = Color(0xFFFFEBEE);
+  static const booked = Color(0xFF1565C0);
+  static const bookedBg = Color(0xFFE3F2FD);
+
+  static const slotDisabledBg = Color(0xFFF0ECEA);
+  static const slotDisabledFg = Color(0xFFA59C98);
 }

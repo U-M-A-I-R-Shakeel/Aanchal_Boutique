@@ -12,9 +12,17 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, fg, bg) = switch (status) {
-      RoomStatus.available =>
-        (AppStrings.available, AppColors.available, AppColors.availableBg),
+      RoomStatus.available => (
+        AppStrings.available,
+        AppColors.available,
+        AppColors.availableBg,
+      ),
       RoomStatus.busy => (AppStrings.busy, AppColors.busy, AppColors.busyBg),
+      RoomStatus.booked => (
+        AppStrings.booked,
+        AppColors.booked,
+        AppColors.bookedBg,
+      ),
     };
 
     return Container(
