@@ -8,8 +8,9 @@ import '../../../../core/utils/formatters.dart';
 import '../../../home/presentation/providers/rooms_provider.dart';
 import '../../domain/models/booking.dart';
 import '../providers/bookings_provider.dart';
+import '../widgets/cancel_booking_dialog.dart';
 
-/// All bookings: upcoming ones (cancellable) and past/cancelled history.
+/// All bookings: upcoming ones (cancellable) and past ones.
 class BookingsScreen extends ConsumerWidget {
   const BookingsScreen({super.key});
 
@@ -53,12 +54,12 @@ class BookingsScreen extends ConsumerWidget {
                       foregroundColor: AppColors.busy,
                     ),
                     onPressed: () =>
-                        _confirmCancel(context, ref, b, roomName(b)),
+                        confirmAndCancelBooking(context, ref, b, roomName(b)),
                     child: const Text(AppStrings.cancel),
                   ),
                 ),
               const SizedBox(height: 16),
-              _SectionHeader(AppStrings.pastAndCancelled, history.length),
+              _SectionHeader(AppStrings.past, history.length),
               if (history.isEmpty) const _EmptyText(AppStrings.noHistory),
               for (final b in history)
                 _BookingTile(
@@ -74,53 +75,6 @@ class BookingsScreen extends ConsumerWidget {
         },
       ),
     );
-  }
-
-  Future<void> _confirmCancel(
-    BuildContext context,
-    WidgetRef ref,
-    Booking booking,
-    String roomName,
-  ) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(AppStrings.cancelBookingTitle),
-        content: Text(
-          AppStrings.cancelBookingBody(
-            roomName,
-            Formatters.dateAndTime(booking.start),
-            booking.customerName,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(AppStrings.keepBooking),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.busy),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(AppStrings.cancelBooking),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-
-    String message;
-    try {
-      await ref.read(bookingsProvider.notifier).cancel(booking);
-      message = AppStrings.bookingCancelled;
-    } on BookingException catch (e) {
-      message = e.message;
-    } catch (_) {
-      message = AppStrings.cancelFailed;
-    }
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
 

@@ -26,11 +26,19 @@ abstract final class AppStrings {
   static const legendSelected = 'Selected';
   static const legendUnavailable = 'Unavailable';
 
+  static const home = 'Home';
+  static const staff = 'Staff';
+  static const staffTitle = 'Daily Schedule';
+  static const pickDate = 'Pick a date';
+  static const previousDay = 'Previous day';
+  static const nextDay = 'Next day';
+  static const noBookingsOnDay = 'No bookings on this day.';
+
   static const bookings = 'Bookings';
   static const upcoming = 'Upcoming';
-  static const pastAndCancelled = 'Past & cancelled';
+  static const past = 'Past';
   static const noUpcoming = 'No upcoming bookings.';
-  static const noHistory = 'No past or cancelled bookings yet.';
+  static const noHistory = 'No past bookings yet.';
   static const cancel = 'Cancel';
   static const keepBooking = 'Keep booking';
   static const cancelBooking = 'Cancel booking';

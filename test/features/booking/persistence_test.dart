@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:aanchal_boutique/core/database/app_database.dart';
 import 'package:aanchal_boutique/features/booking/data/sqlite_booking_repository.dart';
 import 'package:aanchal_boutique/features/booking/domain/booking_exception.dart';
-import 'package:aanchal_boutique/features/booking/domain/models/booking.dart';
 import 'package:aanchal_boutique/features/home/data/sqlite_room_repository.dart';
 import 'package:aanchal_boutique/features/home/domain/models/room.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -70,28 +69,72 @@ void main() {
     await db.close();
   });
 
-  test('cancellation is persisted and keeps the row', () async {
-    var db = await open();
+  test(
+    'cancelling deletes the row, frees the room, survives restart',
+    () async {
+      var db = await open();
+      final repo = SqliteBookingRepository(db);
+      final slot = DateTime(2026, 11, 12, 12);
+      final b = await repo.create(
+        roomId: 'room-3',
+        start: slot,
+        customerName: 'Hira',
+        now: today,
+      );
+      expect((await statuses(db, today))['room-3'], RoomStatus.booked);
+
+      await repo.cancel(b, now: today);
+      await expectLater(
+        repo.cancel(b, now: today),
+        throwsA(isA<BookingException>()),
+      );
+      expect(await db.query('bookings'), isEmpty);
+      await db.close();
+
+      db = await open();
+      expect(await SqliteBookingRepository(db).getBookings(), isEmpty);
+      expect((await statuses(db, today))['room-3'], RoomStatus.available);
+
+      // The freed slot can be booked again.
+      await SqliteBookingRepository(
+        db,
+      ).create(roomId: 'room-3', start: slot, customerName: 'Sana', now: today);
+      await db.close();
+    },
+  );
+
+  test('cancelling one of two bookings keeps the room booked', () async {
+    final db = await open();
     final repo = SqliteBookingRepository(db);
-    final b = await repo.create(
-      roomId: 'room-3',
+    final first = await repo.create(
+      roomId: 'room-1',
       start: DateTime(2026, 11, 12, 12),
-      customerName: 'Hira',
+      customerName: 'A',
       now: today,
     );
-    final cancelled = await repo.cancel(b, now: today);
-    expect(cancelled.status, BookingStatus.cancelled);
-    expect(cancelled.cancelledAt, today);
-    await expectLater(
-      repo.cancel(b, now: today),
-      throwsA(isA<BookingException>()),
+    await repo.create(
+      roomId: 'room-1',
+      start: DateTime(2026, 11, 13, 12),
+      customerName: 'B',
+      now: today,
     );
+    await repo.cancel(first, now: today);
+    expect((await statuses(db, today))['room-1'], RoomStatus.booked);
     await db.close();
+  });
 
-    db = await open();
-    final rows = await SqliteBookingRepository(db).getBookings();
-    expect(rows.single.status, BookingStatus.cancelled);
-    expect((await statuses(db, today))['room-3'], RoomStatus.available);
+  test('getBookingsForDate returns only that day, sorted by time', () async {
+    final db = await open();
+    final repo = SqliteBookingRepository(db);
+    Future<void> add(String room, DateTime start, String name) =>
+        repo.create(roomId: room, start: start, customerName: name, now: today);
+    await add('room-3', DateTime(2026, 11, 12, 15), 'Late');
+    await add('room-1', DateTime(2026, 11, 12, 10, 30), 'Early');
+    await add('room-1', DateTime(2026, 11, 13, 10), 'Other day');
+
+    final day = await repo.getBookingsForDate(DateTime(2026, 11, 12));
+    expect(day.map((b) => b.customerName), ['Early', 'Late']);
+    expect(await repo.getBookingsForDate(DateTime(2026, 11, 14)), isEmpty);
     await db.close();
   });
 

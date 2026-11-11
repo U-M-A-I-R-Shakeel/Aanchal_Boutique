@@ -32,7 +32,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(BookingsScreen), findsOneWidget);
     expect(find.text('Upcoming (1)'), findsOneWidget);
-    expect(find.text('Past & cancelled (2)'), findsOneWidget);
+    expect(find.text('Past (2)'), findsOneWidget);
     expect(find.text('Room 1 · Sana'), findsOneWidget);
     expect(find.text('Room 1 · Zara'), findsOneWidget); // yesterday's booking
     expect(find.text('Completed'), findsOneWidget);
@@ -46,8 +46,8 @@ void main() {
 
     expect(find.text('Booking cancelled'), findsOneWidget);
     expect(find.text('Upcoming (0)'), findsOneWidget);
-    expect(find.text('Past & cancelled (3)'), findsOneWidget);
-    expect(store.bookings.firstWhere((b) => b.id == 2).isConfirmed, isFalse);
+    expect(find.text('Past (2)'), findsOneWidget);
+    expect(store.bookings.where((b) => b.id == 2), isEmpty);
 
     await tester.pageBack();
     await tester.pumpAndSettle();

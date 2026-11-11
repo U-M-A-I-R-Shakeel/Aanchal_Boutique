@@ -57,24 +57,35 @@ class BookingsNotifier extends AsyncNotifier<List<Booking>> {
         .read(bookingRepositoryProvider)
         .create(roomId: roomId, start: start, customerName: name, now: now);
     state = AsyncData([..._current, booking]);
-    ref.invalidate(roomsProvider);
+    _refreshDerived();
     return booking;
   }
 
+  /// Deletes [booking] from the database, then refreshes room statuses.
   Future<void> cancel(Booking booking) async {
-    final cancelled = await ref
+    await ref
         .read(bookingRepositoryProvider)
         .cancel(booking, now: ref.read(clockProvider)());
-    state = AsyncData([
-      for (final b in _current) b.id == booking.id ? cancelled : b,
-    ]);
+    state = AsyncData(_current.where((b) => b.id != booking.id).toList());
+    _refreshDerived();
+  }
+
+  void _refreshDerived() {
     ref.invalidate(roomsProvider);
+    ref.invalidate(bookingsForDateProvider);
   }
 }
 
 final bookingsProvider = AsyncNotifierProvider<BookingsNotifier, List<Booking>>(
   BookingsNotifier.new,
 );
+
+/// Confirmed bookings for one day, earliest first, read from the database.
+final bookingsForDateProvider = FutureProvider.autoDispose
+    .family<List<Booking>, DateTime>(
+      (ref, date) =>
+          ref.watch(bookingRepositoryProvider).getBookingsForDate(date),
+    );
 
 /// Slot start times with a confirmed booking for a room.
 final bookedSlotsProvider = Provider.family<Set<DateTime>, String>(

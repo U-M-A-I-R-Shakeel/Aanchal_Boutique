@@ -34,16 +34,6 @@ class Booking {
   /// Confirmed and the slot hasn't finished yet.
   bool isUpcoming(DateTime now) => isConfirmed && end.isAfter(now);
 
-  Booking cancel(DateTime at) => Booking(
-    id: id,
-    roomId: roomId,
-    start: start,
-    customerName: customerName,
-    createdAt: createdAt,
-    status: BookingStatus.cancelled,
-    cancelledAt: at,
-  );
-
   @override
   bool operator ==(Object other) =>
       other is Booking &&

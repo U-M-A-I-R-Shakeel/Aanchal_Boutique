@@ -56,6 +56,11 @@ class FakeBookingRepository implements BookingRepository {
   Future<List<Booking>> getBookings() async => List.of(store.bookings);
 
   @override
+  Future<List<Booking>> getBookingsForDate(DateTime date) async =>
+      store.bookings.where((b) => b.isConfirmed && b.date == date).toList()
+        ..sort((a, b) => a.start.compareTo(b.start));
+
+  @override
   Future<Booking> create({
     required String roomId,
     required DateTime start,
@@ -82,15 +87,13 @@ class FakeBookingRepository implements BookingRepository {
   }
 
   @override
-  Future<Booking> cancel(Booking booking, {required DateTime now}) async {
+  Future<void> cancel(Booking booking, {required DateTime now}) async {
     final i = store.bookings.indexWhere((b) => b.id == booking.id);
     if (i < 0 || !store.bookings[i].isConfirmed) {
       throw const BookingException(AppStrings.alreadyCancelled);
     }
-    final cancelled = store.bookings[i].cancel(now);
-    store.bookings[i] = cancelled;
+    store.bookings.removeAt(i);
     store.sync(now, roomId: booking.roomId);
-    return cancelled;
   }
 }
 

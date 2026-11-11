@@ -4,6 +4,9 @@ abstract interface class BookingRepository {
   /// Every booking, confirmed and cancelled, oldest slot first.
   Future<List<Booking>> getBookings();
 
+  /// Confirmed bookings on [date], earliest slot first.
+  Future<List<Booking>> getBookingsForDate(DateTime date);
+
   /// Saves a confirmed booking and marks the room as booked.
   ///
   /// Throws `BookingException` if the room is busy or the slot already has a
@@ -15,9 +18,9 @@ abstract interface class BookingRepository {
     required DateTime now,
   });
 
-  /// Marks [booking] as cancelled (the row is kept) and frees the room if it
-  /// has no other upcoming bookings. Returns the updated booking.
+  /// Deletes [booking] and frees the room if it has no other upcoming
+  /// bookings.
   ///
-  /// Throws `BookingException` if it was already cancelled.
-  Future<Booking> cancel(Booking booking, {required DateTime now});
+  /// Throws `BookingException` if it no longer exists.
+  Future<void> cancel(Booking booking, {required DateTime now});
 }

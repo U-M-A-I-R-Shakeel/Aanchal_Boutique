@@ -16,6 +16,8 @@ lib/
 │   ├── theme/                  # Colors and ThemeData
 │   └── utils/                  # clockProvider, date/time formatters (intl)
 └── features/
+    ├── shell/                  # Bottom navigation (Home / Staff)
+    ├── staff/                  # Daily schedule for the boutique owner
     ├── home/
     │   ├── domain/             # Room model, RoomRepository interface
     │   ├── data/               # SqliteRoomRepository, room status sync
@@ -33,10 +35,9 @@ lib/
   `status` (`confirmed` / `cancelled`), `created_at`, `cancelled_at`
 
 A unique index allows only one *confirmed* booking per room and slot, so
-double-booking is rejected by the database itself. Cancelling marks a booking as
-cancelled (it is never deleted). A room is `booked` while it has a confirmed
-booking that hasn't ended; this is re-checked on every start, booking and
-cancellation.
+double-booking is rejected by the database itself. Cancelling deletes the
+booking. A room is `booked` while it has a confirmed booking that hasn't ended;
+this is re-checked on every start, booking and cancellation.
 
 The database lives on the device, so uninstalling the app erases it. Backup or
 server sync would be needed for that.

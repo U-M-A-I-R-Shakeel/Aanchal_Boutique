@@ -22,6 +22,17 @@ class SqliteBookingRepository implements BookingRepository {
   }
 
   @override
+  Future<List<Booking>> getBookingsForDate(DateTime date) async {
+    final rows = await _db.query(
+      _table,
+      where: 'date = ? AND status = ?',
+      whereArgs: [DbCodec.date(date), BookingStatus.confirmed.name],
+      orderBy: 'start_time, id',
+    );
+    return rows.map(_fromRow).toList();
+  }
+
+  @override
   Future<Booking> create({
     required String roomId,
     required DateTime start,
@@ -67,15 +78,14 @@ class SqliteBookingRepository implements BookingRepository {
   }
 
   @override
-  Future<Booking> cancel(Booking booking, {required DateTime now}) {
+  Future<void> cancel(Booking booking, {required DateTime now}) {
     return _db.transaction((txn) async {
-      final updated = await txn.update(
+      final deleted = await txn.delete(
         _table,
-        {'status': BookingStatus.cancelled.name, 'cancelled_at': _ts(now)},
         where: 'id = ? AND status = ?',
         whereArgs: [booking.id, BookingStatus.confirmed.name],
       );
-      if (updated == 0) {
+      if (deleted == 0) {
         throw const BookingException(AppStrings.alreadyCancelled);
       }
       await syncRoomStatuses(
@@ -83,12 +93,6 @@ class SqliteBookingRepository implements BookingRepository {
         activeAfter: now.subtract(BookingRules.slotLength),
         roomId: booking.roomId,
       );
-      final rows = await txn.query(
-        _table,
-        where: 'id = ?',
-        whereArgs: [booking.id],
-      );
-      return _fromRow(rows.single);
     });
   }
 
