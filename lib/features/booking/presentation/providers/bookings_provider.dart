@@ -2,15 +2,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/database/database_provider.dart';
+import '../../../../core/notifications/notification_provider.dart';
 import '../../../../core/utils/clock.dart';
 import '../../../home/presentation/providers/rooms_provider.dart';
 import '../../data/sqlite_booking_repository.dart';
 import '../../domain/booking_exception.dart';
+import '../../domain/booking_reminders.dart';
 import '../../domain/booking_repository.dart';
 import '../../domain/booking_rules.dart';
 import '../../domain/models/booking.dart';
 
 export '../../domain/booking_exception.dart';
+
+final bookingRemindersProvider = Provider<BookingReminders>(
+  (ref) => BookingReminders(ref.watch(notificationServiceProvider)),
+);
 
 final bookingRepositoryProvider = Provider<BookingRepository>(
   (ref) => SqliteBookingRepository(ref.watch(databaseProvider)),
@@ -58,6 +64,11 @@ class BookingsNotifier extends AsyncNotifier<List<Booking>> {
         .create(roomId: roomId, start: start, customerName: name, now: now);
     state = AsyncData([..._current, booking]);
     _refreshDerived();
+    await bestEffort(
+      () => ref
+          .read(bookingRemindersProvider)
+          .schedule(booking, roomName: room.name, now: now),
+    );
     return booking;
   }
 
@@ -68,6 +79,7 @@ class BookingsNotifier extends AsyncNotifier<List<Booking>> {
         .cancel(booking, now: ref.read(clockProvider)());
     state = AsyncData(_current.where((b) => b.id != booking.id).toList());
     _refreshDerived();
+    await bestEffort(() => ref.read(bookingRemindersProvider).cancel(booking));
   }
 
   void _refreshDerived() {

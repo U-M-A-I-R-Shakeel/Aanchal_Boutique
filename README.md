@@ -28,6 +28,14 @@ lib/
         └── presentation/       # bookingsProvider, BookingScreen, BookingsScreen
 ```
 
+### Booking reminders
+
+When a booking is made, a local notification is scheduled for 1 hour before it
+(`flutter_local_notifications`), e.g. "Fitting Room 2 at 3:00 PM". Cancelling a
+booking cancels its reminder, and reminders are rebuilt from the database each
+time the app starts. Bookings less than an hour away get no reminder. Tapping a
+reminder opens the Bookings screen.
+
 ### Data
 
 - **rooms**: `id`, `name`, `status` (`available` / `busy` / `booked`), `sort_order`

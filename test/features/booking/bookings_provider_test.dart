@@ -1,5 +1,6 @@
 import 'package:aanchal_boutique/core/database/app_database.dart';
 import 'package:aanchal_boutique/core/database/database_provider.dart';
+import 'package:aanchal_boutique/core/notifications/notification_provider.dart';
 import 'package:aanchal_boutique/core/utils/clock.dart';
 import 'package:aanchal_boutique/features/booking/presentation/providers/bookings_provider.dart';
 import 'package:aanchal_boutique/features/home/domain/models/room.dart';
@@ -7,6 +8,8 @@ import 'package:aanchal_boutique/features/home/presentation/providers/rooms_prov
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import '../../helpers/fake_notifications.dart';
 
 /// Providers wired to a real (in-memory) SQLite database.
 void main() {
@@ -22,6 +25,9 @@ void main() {
       overrides: [
         databaseProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(() => now),
+        notificationServiceProvider.overrideWithValue(
+          FakeNotificationService(),
+        ),
       ],
     );
     addTearDown(() async {
