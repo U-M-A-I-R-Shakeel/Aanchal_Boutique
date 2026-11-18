@@ -49,13 +49,13 @@ void main() {
     await repo.create(
       roomId: 'room-1',
       start: tomorrowAt(11),
-      customerName: 'Hira Malik',
+      customerName: 'Sufyan',
       now: now,
     );
-    final zara = await repo.create(
+    final abdulRehman = await repo.create(
       roomId: 'room-3',
       start: tomorrowAt(15),
-      customerName: 'Zara Ahmed',
+      customerName: 'Abdul Rehman',
       now: now,
     );
 
@@ -81,7 +81,7 @@ void main() {
     await tap(find.text('Room 1'));
     await tester.enterText(
       find.byKey(const ValueKey('customer-name')),
-      'Ayesha Khan',
+      'Umair',
     );
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
@@ -101,20 +101,20 @@ void main() {
     await tap(find.byTooltip('Next day'), 3);
 
     // 5. Reminder (fired early for the camera; normally 1 hour before).
-    final ayesha = (await repo.getBookingsForDate(
+    final umair = (await repo.getBookingsForDate(
       tomorrowAt(0),
-    )).firstWhere((b) => b.customerName == 'Ayesha Khan');
+    )).firstWhere((b) => b.customerName == 'Umair');
     await notifications.schedule(
-      id: ayesha.id,
+      id: umair.id,
       title: BookingReminders.title,
-      body: BookingReminders.body('Room 1', ayesha.start),
+      body: BookingReminders.body('Room 1', umair.start),
       at: DateTime.now().add(const Duration(seconds: 6)),
-      payload: BookingReminders.payload(ayesha),
+      payload: BookingReminders.payload(umair),
     );
     await pause(12);
 
     // 6. Staff cancels a booking; the room's status updates.
-    await tap(find.byKey(ValueKey('staff-cancel-${zara.id}')), 2);
+    await tap(find.byKey(ValueKey('staff-cancel-${abdulRehman.id}')), 2);
     await tap(find.text('Cancel booking'), 3);
     await tap(find.text('Home'), 4);
 

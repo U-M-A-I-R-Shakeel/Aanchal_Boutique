@@ -12,7 +12,7 @@ abstract final class AppStrings {
   static const selectDate = 'Select date';
   static const selectTime = 'Select time';
   static const yourName = 'Your name';
-  static const yourNameHint = 'e.g. Ayesha Khan';
+  static const yourNameHint = 'Enter your full name';
   static const today = 'Today';
   static const confirmBooking = 'Confirm Booking';
   static const pickASlot = 'Pick a time slot to continue';
