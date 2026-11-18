@@ -41,7 +41,7 @@ void main() {
     expect(find.text('Enter your name to continue'), findsOneWidget);
     expect(confirmButton(tester).onPressed, isNull);
 
-    await tester.enterText(nameField, '  Ayesha  ');
+    await tester.enterText(nameField, '  Umair  ');
     await tester.pump();
     final when = Formatters.dateAndTime(DateTime(2026, 11, 10, 10, 30));
     expect(find.text(when), findsOneWidget);
@@ -59,7 +59,7 @@ void main() {
     final saved = store.bookings.last;
     expect(saved.roomId, 'room-1');
     expect(saved.start, DateTime(2026, 11, 10, 10, 30));
-    expect(saved.customerName, 'Ayesha');
+    expect(saved.customerName, 'Umair');
   });
 
   testWidgets('booked slot is greyed out when reopening the room', (
@@ -75,14 +75,14 @@ void main() {
     }
 
     await openRoom3Tomorrow();
-    await tester.enterText(nameField, 'Hira');
+    await tester.enterText(nameField, 'Sufyan');
     await tester.tap(slot('1500'));
     await tester.pump();
     await tester.tap(find.text('Confirm Booking'));
     await tester.pumpAndSettle();
 
     await openRoom3Tomorrow();
-    await tester.enterText(nameField, 'Hira');
+    await tester.enterText(nameField, 'Sufyan');
     await tester.tap(slot('1500'));
     await tester.pump();
     expect(confirmButton(tester).onPressed, isNull);
@@ -92,7 +92,7 @@ void main() {
     await pumpApp(tester);
     await tester.tap(find.text('Room 1'));
     await tester.pumpAndSettle();
-    await tester.enterText(nameField, 'Hira');
+    await tester.enterText(nameField, 'Sufyan');
 
     await tester.tap(slot('1030'));
     await tester.pump();
@@ -121,7 +121,7 @@ void main() {
     await pumpApp(tester, now: DateTime(2026, 11, 10, 19));
     await tester.tap(find.text('Room 1'));
     await tester.pumpAndSettle();
-    await tester.enterText(nameField, 'Hira');
+    await tester.enterText(nameField, 'Sufyan');
 
     await tester.tap(slot('1030'));
     await tester.pump();

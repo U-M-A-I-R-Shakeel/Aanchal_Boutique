@@ -133,7 +133,7 @@ void main() {
       final b = await notifier.book(
         roomId: 'room-3',
         start: DateTime(2026, 11, 10, 15),
-        customerName: 'Ayesha',
+        customerName: 'Umair',
       );
       expect(fake.pending[b.id]!.at, DateTime(2026, 11, 10, 14));
       expect(fake.pending[b.id]!.body, startsWith('Fitting Room 3 at 3:00'));
@@ -164,7 +164,7 @@ void main() {
           .book(
             roomId: 'room-1',
             start: DateTime(2026, 11, 10, 15),
-            customerName: 'Hira',
+            customerName: 'Sufyan',
           );
       expect(await container.read(bookingsProvider.future), [b]);
     });

@@ -14,13 +14,18 @@ void main() {
       tester,
       store: FakeStore(
         bookings: [
-          fakeBooking(1, 'room-1', DateTime(2026, 11, 9, 14), name: 'Zara'),
-          fakeBooking(2, 'room-1', DateTime(2026, 11, 11, 10), name: 'Sana'),
+          fakeBooking(
+            1,
+            'room-1',
+            DateTime(2026, 11, 9, 14),
+            name: 'Abdul Rehman',
+          ),
+          fakeBooking(2, 'room-1', DateTime(2026, 11, 11, 10), name: 'Ali'),
           fakeBooking(
             3,
             'room-3',
             DateTime(2026, 11, 8, 12),
-            name: 'Mehr',
+            name: 'Bilal',
             status: BookingStatus.cancelled,
           ),
         ],
@@ -33,8 +38,11 @@ void main() {
     expect(find.byType(BookingsScreen), findsOneWidget);
     expect(find.text('Upcoming (1)'), findsOneWidget);
     expect(find.text('Past (2)'), findsOneWidget);
-    expect(find.text('Room 1 · Sana'), findsOneWidget);
-    expect(find.text('Room 1 · Zara'), findsOneWidget); // yesterday's booking
+    expect(find.text('Room 1 · Ali'), findsOneWidget);
+    expect(
+      find.text('Room 1 · Abdul Rehman'),
+      findsOneWidget,
+    ); // yesterday's booking
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('Cancelled'), findsOneWidget);
 

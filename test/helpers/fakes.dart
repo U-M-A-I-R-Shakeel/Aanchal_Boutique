@@ -101,7 +101,7 @@ Booking fakeBooking(
   int id,
   String roomId,
   DateTime start, {
-  String name = 'Sana',
+  String name = 'Ali',
   BookingStatus status = BookingStatus.confirmed,
 }) => Booking(
   id: id,

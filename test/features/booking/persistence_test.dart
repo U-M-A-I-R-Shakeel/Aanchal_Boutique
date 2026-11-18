@@ -47,7 +47,7 @@ void main() {
     final created = await SqliteBookingRepository(db).create(
       roomId: 'room-1',
       start: DateTime(2026, 11, 10, 15, 30),
-      customerName: 'Ayesha',
+      customerName: 'Umair',
       now: today,
     );
     await db.close();
@@ -56,7 +56,7 @@ void main() {
     db = await open();
     final bookings = await SqliteBookingRepository(db).getBookings();
     expect(bookings, [created]);
-    expect(bookings.single.customerName, 'Ayesha');
+    expect(bookings.single.customerName, 'Umair');
     expect(bookings.single.start, DateTime(2026, 11, 10, 15, 30));
     expect((await statuses(db, today))['room-1'], RoomStatus.booked);
     await db.close();
@@ -78,7 +78,7 @@ void main() {
       final b = await repo.create(
         roomId: 'room-3',
         start: slot,
-        customerName: 'Hira',
+        customerName: 'Sufyan',
         now: today,
       );
       expect((await statuses(db, today))['room-3'], RoomStatus.booked);
@@ -98,7 +98,7 @@ void main() {
       // The freed slot can be booked again.
       await SqliteBookingRepository(
         db,
-      ).create(roomId: 'room-3', start: slot, customerName: 'Sana', now: today);
+      ).create(roomId: 'room-3', start: slot, customerName: 'Ali', now: today);
       await db.close();
     },
   );

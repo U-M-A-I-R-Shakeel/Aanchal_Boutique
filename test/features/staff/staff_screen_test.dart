@@ -136,7 +136,7 @@ void main() {
     expect(find.byType(BookingScreen), findsOneWidget);
     await tester.enterText(
       find.byKey(const ValueKey('customer-name')),
-      'Ayesha',
+      'Umair',
     );
     await tester.tap(find.byKey(const ValueKey('slot-1030')));
     await tester.pump();
@@ -144,6 +144,6 @@ void main() {
     await tester.pumpAndSettle();
 
     await openStaff(tester);
-    expect(find.text('Ayesha'), findsOneWidget);
+    expect(find.text('Umair'), findsOneWidget);
   });
 }

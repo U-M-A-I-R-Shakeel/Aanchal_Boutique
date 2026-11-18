@@ -49,10 +49,10 @@ void main() {
     final b = await notifier().book(
       roomId: 'room-1',
       start: slot,
-      customerName: ' Ayesha ',
+      customerName: ' Umair ',
     );
 
-    expect(b.customerName, 'Ayesha');
+    expect(b.customerName, 'Umair');
     expect(notifier().isSlotTaken('room-1', slot), isTrue);
     expect(container.read(bookedSlotsProvider('room-1')), contains(slot));
     expect(await statusOf('room-1'), RoomStatus.booked);
