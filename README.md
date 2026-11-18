@@ -34,7 +34,7 @@ Version 1.0.0 (build 1). Files are in [`delivery/`](delivery/).
 |---|---|
 | [`aanchal-boutique-1.0.0.apk`](delivery/aanchal-boutique-1.0.0.apk) | Android app. Install it directly on a phone (allow "install unknown apps"). |
 | [`aanchal-boutique-1.0.0.aab`](delivery/aanchal-boutique-1.0.0.aab) | Android App Bundle. Upload this to the Google Play Console. |
-| [`aanchal-boutique-demo.mp4`](delivery/aanchal-boutique-demo.mp4) | 58-second demo video. |
+| [`aanchal-boutique-demo.mp4`](delivery/aanchal-boutique-demo.mp4) | 54-second demo video. |
 
 There is no iOS file. An installable iOS app has to be signed with an Apple
 Developer account, which this project doesn't have yet. See
@@ -43,7 +43,7 @@ Developer account, which this project doesn't have yet. See
 ## Demo video
 
 [`delivery/aanchal-boutique-demo.mp4`](delivery/aanchal-boutique-demo.mp4)
-(58 seconds, iPhone 16 Pro simulator) shows:
+(54 seconds, iPhone 16 Pro simulator) shows:
 
 1. Home: Room 2 is busy and can't be booked.
 2. Booking Room 1: name, date (tomorrow), 10:30 AM slot. The 11:00 AM slot is
