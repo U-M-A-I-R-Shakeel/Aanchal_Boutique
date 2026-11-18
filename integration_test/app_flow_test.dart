@@ -69,7 +69,7 @@ void main() {
     expect(find.text('Book Room 1'), findsOneWidget);
     await tester.enterText(
       find.byKey(const ValueKey('customer-name')),
-      'E2E Ayesha',
+      'E2E Umair',
     );
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.tap(find.byKey(const ValueKey('date-1')));
@@ -87,7 +87,7 @@ void main() {
     // Saved in SQLite
     final rows = await db.query('bookings');
     expect(rows, hasLength(1));
-    expect(rows.single['customer_name'], 'E2E Ayesha');
+    expect(rows.single['customer_name'], 'E2E Umair');
     expect(rows.single['start_time'], '15:00');
     final id = rows.single['id']! as int;
 
@@ -115,7 +115,7 @@ void main() {
     expect(find.text('Booked'), findsOneWidget);
     await tester.tap(find.byTooltip('Bookings'));
     await tester.pumpAndSettle();
-    expect(find.text('Room 1 · E2E Ayesha'), findsOneWidget);
+    expect(find.text('Room 1 · E2E Umair'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
 
@@ -124,7 +124,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Next day'));
     await tester.pumpAndSettle();
-    expect(find.text('E2E Ayesha'), findsOneWidget);
+    expect(find.text('E2E Umair'), findsOneWidget);
     expect(find.text('Room 1'), findsOneWidget);
     await tester.tap(find.byKey(ValueKey('staff-cancel-$id')));
     await tester.pumpAndSettle();
