@@ -185,10 +185,17 @@ keyAlias=upload
 storeFile=upload-keystore.jks
 ```
 
-Both files are kept **out of git on purpose** (see `android/.gitignore`) and
-are handed over separately (see [Handover notes](#handover-notes)). Without
-them, release builds fall back to the debug key: fine for testing, not
-accepted by Google Play. To create a new key instead:
+Both files are **included in this repository**, at the client's request, so
+release builds can be made straight from a clone.
+
+> **Warning:** this repository is public, so this key is visible to anyone.
+> Before publishing on Google Play, create a new key that is kept private
+> (command below), put it in place of these two files, and keep it out of any
+> public repository. Google Play only accepts updates signed with the key used
+> for the first upload.
+
+If the two files are removed, release builds fall back to the debug key: fine
+for testing, not accepted by Google Play. To create a new key:
 
 ```bash
 keytool -genkeypair -v -keystore android/app/upload-keystore.jks \
@@ -450,9 +457,10 @@ away.
 ## Handover notes
 
 - **Android signing key.** `android/app/upload-keystore.jks` and
-  `android/key.properties` are not in the repository. They are handed over
-  separately and must be stored safely (for example in a password manager).
-  Google Play only accepts updates signed with the same key.
+  `android/key.properties` are included in this repository. Because the
+  repository is public, replace them with a new private key before the first
+  Google Play upload (see [Android](#android)), and store that key safely
+  (for example in a password manager).
 - **Google Play.** Upload `delivery/aanchal-boutique-1.0.0.aab` in the Play
   Console. A store listing, screenshots and a privacy policy are needed there.
 - **iOS.** Needs an Apple Developer account before an iOS file can be built
