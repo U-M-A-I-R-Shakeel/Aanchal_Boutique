@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <application
-        android:label="aanchal_boutique"
+        android:label="Aanchal Boutique"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
