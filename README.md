@@ -225,7 +225,7 @@ The iOS release build is
 [`delivery/aanchal-boutique-1.0.0-ios-unsigned.ipa`](delivery/aanchal-boutique-1.0.0-ios-unsigned.ipa)
 (6.7 MB): a release-mode build for iPhone (arm64), version 1.0.0 (1),
 iOS 13.0 or later, bundle ID `com.aanchalboutique.aanchalBoutique`. It was
-made with:
+built on a Mac (Xcode 16.4, Flutter 3.35.3) with:
 
 ```bash
 flutter build ios --release --no-codesign
