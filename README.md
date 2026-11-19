@@ -45,7 +45,7 @@ bookings (`server/`), with a Postman collection to test it (`postman/`).
 | Android app, installable on a phone | [`delivery/aanchal-boutique-1.0.0.apk`](delivery/aanchal-boutique-1.0.0.apk) |
 | Android App Bundle, for Google Play | [`delivery/aanchal-boutique-1.0.0.aab`](delivery/aanchal-boutique-1.0.0.aab) |
 | iOS release build (unsigned IPA) | [`delivery/aanchal-boutique-1.0.0-ios-unsigned.ipa`](delivery/aanchal-boutique-1.0.0-ios-unsigned.ipa) |
-| Demo video (56 seconds) | [`delivery/aanchal-boutique-demo.mp4`](delivery/aanchal-boutique-demo.mp4) |
+| Demo video (89 seconds) | [`delivery/aanchal-boutique-demo.mp4`](delivery/aanchal-boutique-demo.mp4) |
 | Source code | This repository (`lib/`, `android/`, `ios/`) |
 | Booking REST API server | [`server/`](server/) |
 | Postman collection | [`postman/aanchal-boutique-api.postman_collection.json`](postman/aanchal-boutique-api.postman_collection.json) |
@@ -118,7 +118,7 @@ account before it can go on an iPhone (see [iOS](#ios)).
 ## Demo video
 
 [`delivery/aanchal-boutique-demo.mp4`](delivery/aanchal-boutique-demo.mp4)
-(56 seconds, iPhone 16 Pro simulator) shows:
+(89 seconds) shows:
 
 1. Home: Room 2 is busy and can't be booked.
 2. Booking Room 1 for Umair: tomorrow, 10:30 AM. Sufyan's 11:00 AM booking
@@ -128,9 +128,20 @@ account before it can go on an iPhone (see [iOS](#ios)).
    by time.
 5. The reminder: "Your fitting is in 1 hour — Fitting Room 1 at 10:30 AM".
 6. Staff cancels Abdul Rehman's booking. Room 3 goes back to Available.
+7. The **Android release APK** running on a Pixel 9 Pro emulator (Android 16):
+   Home, a busy room refused, the booking screen, and the Staff tab.
+8. The **booking REST API and Postman collection**: the server starting, then
+   the collection's 16 requests run in order against it (create, list, double
+   booking, busy room, invalid slot, cancel ...), ending with 32 of 32 test
+   checks passed.
+9. The list of deliverables.
 
-The video was recorded by [`integration_test/demo_test.dart`](integration_test/demo_test.dart),
-which taps through the real app. Two things are set up for the camera:
+Parts 1–6 were recorded on the iPhone 16 Pro simulator by
+[`integration_test/demo_test.dart`](integration_test/demo_test.dart), which
+taps through the real app. Part 7 is a screen recording of the release APK
+from [`delivery/`](delivery/). Part 8 shows the actual results of running the
+Postman collection against the server, displayed as a terminal. Two things in
+parts 1–6 are set up for the camera:
 
 - Sufyan's and Abdul Rehman's bookings are sample data added by the script.
 - A reminder normally arrives 1 hour before the booking. To show it in the
