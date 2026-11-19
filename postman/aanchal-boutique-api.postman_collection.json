@@ -1,0 +1,650 @@
+{
+  "info": {
+    "name": "Aanchal Boutique API",
+    "description": "Fitting room booking API for Aanchal Boutique (server/ in the repository).\n\n**Run the server first:** `cd server && dart pub get && dart run bin/server.dart` (listens on http://localhost:8080).\n\nRun the whole collection in order (Collection Runner, or `newman run postman/aanchal-boutique-api.postman_collection.json`). It books Room 1 tomorrow at 10:30 for Umair, checks the error cases, then cancels the booking, so it can be run again.\n\nVariables: `baseUrl` (server address), `date` (set to tomorrow automatically), `bookingId` (set by *Create booking*).\n\nErrors always look like `{\"error\": {\"code\": \"slot_taken\", \"message\": \"...\"}}`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Book for tomorrow, so the slot is always in the future and inside the 7-day window.",
+          "const d = new Date();",
+          "d.setDate(d.getDate() + 1);",
+          "const pad = (n) => String(n).padStart(2, '0');",
+          "pm.collectionVariables.set('date', `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "date",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Server is ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Returns `{\"status\": \"ok\"}` when the server is running."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Rooms",
+      "item": [
+        {
+          "name": "List rooms",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const rooms = pm.response.json();",
+                  "pm.test('Three rooms', () => pm.expect(rooms).to.have.lengthOf(3));",
+                  "pm.test('Room 2 is busy', () => pm.expect(rooms.find((r) => r.id === 'room-2').status).to.eql('busy'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms"
+              ]
+            },
+            "description": "All fitting rooms with their status: `available`, `busy` or `booked` (booked = has a booking that hasn't ended)."
+          },
+          "response": []
+        },
+        {
+          "name": "Room time slots for a day",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('16 slots from 10:00 to 17:30', () => {",
+                  "  pm.expect(body.slots).to.have.lengthOf(16);",
+                  "  pm.expect(body.slots[0].time).to.eql('10:00');",
+                  "  pm.expect(body.slots[15].time).to.eql('17:30');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rooms/room-1/slots?date={{date}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms",
+                "room-1",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{date}}"
+                }
+              ]
+            },
+            "description": "Every 30-minute slot (10:00–17:30) for a room on a day, each `available`, `booked` or `past`. Query: `date` (yyyy-MM-dd, required)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('bookingId', b.id);",
+                  "pm.test('Booking returned', () => {",
+                  "  pm.expect(b.roomId).to.eql('room-1');",
+                  "  pm.expect(b.time).to.eql('10:30');",
+                  "  pm.expect(b.customerName).to.eql('Umair');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "Books a slot. Body: `roomId`, `date` (yyyy-MM-dd), `time` (HH:mm, on the half hour, 10:00–17:30), `customerName`. Returns **201** with the booking. Errors: 400 `invalid_request` / `invalid_slot` / `slot_in_past`, 404 `room_not_found`, 409 `room_busy` / `slot_taken`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"room-1\",\n  \"date\": \"{{date}}\",\n  \"time\": \"10:30\",\n  \"customerName\": \"Umair\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Same booking', () => pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('bookingId'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{bookingId}}"
+              ]
+            },
+            "description": "One booking by id. 404 `booking_not_found` if it doesn't exist."
+          },
+          "response": []
+        },
+        {
+          "name": "List bookings for a day",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Contains the new booking', () => pm.expect(pm.response.json().map((b) => b.id)).to.include(Number(pm.collectionVariables.get('bookingId'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings?date={{date}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{date}}"
+                }
+              ]
+            },
+            "description": "Bookings on one day, sorted by time (the staff schedule). Query: `date` (yyyy-MM-dd). Leave `date` out to list every booking."
+          },
+          "response": []
+        },
+        {
+          "name": "List all bookings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Is a list', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "Every booking, earliest first."
+          },
+          "response": []
+        },
+        {
+          "name": "Room 1 is now booked",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Room 1 is booked', () => pm.expect(pm.response.json().find((r) => r.id === 'room-1').status).to.eql('booked'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms"
+              ]
+            },
+            "description": "After a booking, the room's status is `booked`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Errors",
+      "item": [
+        {
+          "name": "Double booking (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error code is slot_taken', () => pm.expect(pm.response.json().error.code).to.eql('slot_taken'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "The same room and slot can't be booked twice.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"room-1\",\n  \"date\": \"{{date}}\",\n  \"time\": \"10:30\",\n  \"customerName\": \"Sufyan\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Busy room (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error code is room_busy', () => pm.expect(pm.response.json().error.code).to.eql('room_busy'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "A busy room can't be booked.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"room-2\",\n  \"date\": \"{{date}}\",\n  \"time\": \"10:30\",\n  \"customerName\": \"Abdul Rehman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Time not on a slot (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error code is invalid_slot', () => pm.expect(pm.response.json().error.code).to.eql('invalid_slot'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "Times must be on the half hour between 10:00 and 17:30.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"room-1\",\n  \"date\": \"{{date}}\",\n  \"time\": \"10:15\",\n  \"customerName\": \"Umair\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Missing name (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error code is invalid_request', () => pm.expect(pm.response.json().error.code).to.eql('invalid_request'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "`customerName` is required.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"room-1\",\n  \"date\": \"{{date}}\",\n  \"time\": \"11:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unknown room (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error code is room_not_found', () => pm.expect(pm.response.json().error.code).to.eql('room_not_found'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rooms/room-9/slots?date={{date}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms",
+                "room-9",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{date}}"
+                }
+              ]
+            },
+            "description": "Room ids are room-1, room-2 and room-3."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cancel",
+      "item": [
+        {
+          "name": "Cancel booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{bookingId}}"
+              ]
+            },
+            "description": "Deletes the booking and frees the room if it has no other upcoming booking. Returns **204**."
+          },
+          "response": []
+        },
+        {
+          "name": "Room 1 is available again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Room 1 is available', () => pm.expect(pm.response.json().find((r) => r.id === 'room-1').status).to.eql('available'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms"
+              ]
+            },
+            "description": "After the cancel, Room 1 goes back to `available`."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel again (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error code is booking_not_found', () => pm.expect(pm.response.json().error.code).to.eql('booking_not_found'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{bookingId}}"
+              ]
+            },
+            "description": "A booking that no longer exists returns 404."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

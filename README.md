@@ -2,15 +2,16 @@
 
 A mobile app, built in Flutter, that lets Aanchal Boutique's customers book a
 fitting room, gives staff a daily schedule to manage bookings, and reminds
-customers 1 hour before their fitting. It works fully offline: all data is
-stored on the device.
+customers 1 hour before their fitting. The app works fully offline: all data
+is stored on the device. The project also includes a REST API server for
+bookings (`server/`), with a Postman collection to test it (`postman/`).
 
 | | |
 |---|---|
 | **Client** | Aanchal Boutique |
 | **Developer** | [U-M-A-I-R-Shakeel](https://github.com/U-M-A-I-R-Shakeel) |
 | **Version** | 1.0.0 (build 1) |
-| **Platforms** | Android (release delivered), iOS (code ready; needs Apple signing, see [iOS](#ios)) |
+| **Platforms** | Android and iOS (release builds in [`delivery/`](delivery/)) |
 | **Repository** | https://github.com/U-M-A-I-R-Shakeel/Aanchal_Boutique |
 
 | Home | Booking | Bookings | Staff schedule | Reminder | After a cancel |
@@ -43,14 +44,17 @@ stored on the device.
 |---|---|
 | Android app, installable on a phone | [`delivery/aanchal-boutique-1.0.0.apk`](delivery/aanchal-boutique-1.0.0.apk) |
 | Android App Bundle, for Google Play | [`delivery/aanchal-boutique-1.0.0.aab`](delivery/aanchal-boutique-1.0.0.aab) |
+| iOS release build (unsigned IPA) | [`delivery/aanchal-boutique-1.0.0-ios-unsigned.ipa`](delivery/aanchal-boutique-1.0.0-ios-unsigned.ipa) |
 | Demo video (56 seconds) | [`delivery/aanchal-boutique-demo.mp4`](delivery/aanchal-boutique-demo.mp4) |
 | Source code | This repository (`lib/`, `android/`, `ios/`) |
-| Automated tests | `test/` (39 tests) and `integration_test/` (on-device) |
+| Booking REST API server | [`server/`](server/) |
+| Postman collection | [`postman/aanchal-boutique-api.postman_collection.json`](postman/aanchal-boutique-api.postman_collection.json) |
+| Automated tests | `test/` (39 app tests), `server/test/` (11 API tests), `integration_test/` (on-device) |
 | Documentation | This README |
-| Postman collection | Not applicable: the app has no API endpoints (see [Postman collection](#postman-collection)) |
 
 To install the APK on Android: copy it to the phone, open it, and allow
-"Install unknown apps" when asked.
+"Install unknown apps" when asked. The iOS build must be signed with an Apple
+account before it can go on an iPhone (see [iOS](#ios)).
 
 ## Tools and technologies
 
@@ -62,6 +66,8 @@ To install the APK on Android: copy it to the phone, open it, and allow
 | `flutter_local_notifications` + `timezone` | 20.1 / 0.10 | Booking reminders |
 | `intl` | 0.20 | Date and time formatting |
 | `flutter_test`, `integration_test`, `sqflite_common_ffi` | — | Unit, widget, database and on-device tests |
+| `shelf`, `shelf_router`, `sqlite3` | 1.4 / 1.1 / 2.9 | Booking REST API server |
+| Postman | Collection format v2.1 | API test collection |
 | Git + GitHub | — | Version control and delivery |
 | Xcode 16.4, Android SDK 36 | — | iOS and Android builds |
 
@@ -74,7 +80,7 @@ To install the APK on Android: copy it to the phone, open it, and allow
 | 3 | Local storage | SQLite database for rooms and bookings, data survives restarts, Bookings list | `lib/core/database/`, `lib/features/*/data/` |
 | 4 | Staff view | Bottom navigation (Home / Staff), daily schedule sorted by time, date picker, cancel updates database and room status | `lib/features/shell/`, `lib/features/staff/` |
 | 5 | Booking reminders | Local notification 1 hour before each booking, e.g. "Fitting Room 2 at 3:00 PM"; tapping it opens the app | `lib/core/notifications/`, `booking_reminders.dart` |
-| 6 | Delivery package | Signed Android release, README, demo video, uploaded to this repository | `delivery/`, `README.md` |
+| 6 | Delivery package | Android release (APK + AAB) and iOS release (IPA), README, booking REST API with Postman collection, demo video, all in this repository | `delivery/`, `server/`, `postman/`, `README.md` |
 
 ## Features
 
@@ -204,16 +210,30 @@ keytool -genkeypair -v -keystore android/app/upload-keystore.jks \
 
 ### iOS
 
-An iOS app can only be installed or published once it is signed with an
-Apple Developer account (https://developer.apple.com, yearly fee). Version
-1.0.0 doesn't include an iOS file for that reason. With an account:
+The iOS release build is
+[`delivery/aanchal-boutique-1.0.0-ios-unsigned.ipa`](delivery/aanchal-boutique-1.0.0-ios-unsigned.ipa)
+(6.7 MB): a release-mode build for iPhone (arm64), version 1.0.0 (1),
+iOS 13.0 or later, bundle ID `com.aanchalboutique.aanchalBoutique`. It was
+made with:
 
-1. Open `ios/Runner.xcworkspace` in Xcode.
-2. **Runner → Signing & Capabilities**: choose the **Team**; keep or change
-   the bundle ID `com.aanchalboutique.aanchalBoutique`.
-3. Build: `flutter build ipa --release` (output in `build/ios/ipa/`).
-4. Upload with Apple's **Transporter** app or Xcode Organizer, then release
-   through TestFlight or the App Store.
+```bash
+flutter build ios --release --no-codesign
+mkdir Payload && cp -R build/ios/iphoneos/Runner.app Payload/
+zip -qr -y aanchal-boutique-1.0.0-ios-unsigned.ipa Payload
+```
+
+It is **unsigned**, because Apple only lets an app run on an iPhone once it
+is signed with the owner's Apple account. To install or publish it:
+
+- **App Store / TestFlight** (Apple Developer account, yearly fee):
+  1. Open `ios/Runner.xcworkspace` in Xcode.
+  2. **Runner → Signing & Capabilities**: choose the **Team**; keep or change
+     the bundle ID.
+  3. Run `flutter build ipa --release` (signed IPA in `build/ios/ipa/`).
+  4. Upload with Apple's **Transporter** app or Xcode Organizer.
+- **Testing on one iPhone**: open `ios/Runner.xcworkspace` in Xcode, sign in
+  with any Apple ID under **Signing & Capabilities**, connect the iPhone and
+  press Run.
 
 ## Architecture
 
@@ -239,6 +259,16 @@ lib/
     ├── booking/                  Bookings: model, rules, reminders, SQLite
     │                             repository, Booking + Bookings screens
     └── staff/                    Daily schedule screen
+
+server/                           Booking REST API (Dart, shelf + SQLite)
+├── bin/server.dart               Starts the server (PORT, DB_PATH)
+├── lib/src/api.dart              Routes and JSON errors
+├── lib/src/booking_service.dart  Booking logic (same rules as the app)
+├── lib/src/booking_rules.dart    Opening hours and slots
+├── lib/src/database.dart         Schema and the three rooms
+└── test/api_test.dart            11 API tests
+
+postman/                          Postman collection for the API
 ```
 
 ### How a booking flows
@@ -275,6 +305,7 @@ reminder.
 | **Booking id = notification id** | Cancelling a booking cancels exactly its reminder. |
 | **Reminders rebuilt on start** | After a reinstall, reminders match the database. Up to 60 are kept (iOS allows 64 per app). |
 | **Injected clock** | Tests fix "now", so slot and reminder timing are tested exactly. |
+| **Separate REST API server** | Gives the boutique a booking API (for a website, a second device or other systems) without making the phone app depend on internet. It uses the same rules and tables as the app, so the app can be switched to it later through a new `BookingRepository`. |
 
 ## Data model
 
@@ -310,8 +341,86 @@ for confirmed bookings.
 
 ## API documentation
 
-The app has **no network API**: it neither calls nor exposes HTTP endpoints.
-These are the Dart interfaces a developer works with.
+### REST API
+
+The booking API in [`server/`](server/) is a small Dart server (shelf +
+SQLite) with the same rules as the app. The phone app itself works offline
+and doesn't call it yet; see [Known limitations](#known-limitations-and-next-steps).
+
+**Run it**
+
+```bash
+cd server
+dart pub get
+dart run bin/server.dart          # http://localhost:8080
+# options: PORT=9000 DB_PATH=/path/bookings.db dart run bin/server.dart
+dart test                         # 11 API tests
+```
+
+Base URL: `http://localhost:8080`. Requests and responses are JSON.
+
+| Method | Endpoint | Description | Success |
+|---|---|---|---|
+| GET | `/health` | Server is running | 200 `{"status": "ok"}` |
+| GET | `/rooms` | All rooms with status (`available`, `busy`, `booked`) | 200 |
+| GET | `/rooms/{roomId}/slots?date=yyyy-MM-dd` | Every 30-minute slot that day, each `available`, `booked` or `past` | 200 |
+| GET | `/bookings` | All bookings, earliest first | 200 |
+| GET | `/bookings?date=yyyy-MM-dd` | One day's bookings, sorted by time (staff schedule) | 200 |
+| GET | `/bookings/{id}` | One booking | 200 |
+| POST | `/bookings` | Create a booking | 201 |
+| DELETE | `/bookings/{id}` | Cancel (delete) a booking; frees the room | 204 |
+
+**Create a booking**
+
+```http
+POST /bookings
+Content-Type: application/json
+
+{"roomId": "room-1", "date": "2026-11-21", "time": "10:30", "customerName": "Umair"}
+```
+
+```json
+201 Created
+{"id": 1, "roomId": "room-1", "roomName": "Room 1", "date": "2026-11-21",
+ "time": "10:30", "customerName": "Umair", "createdAt": "2026-11-20T09:15:00.000"}
+```
+
+Rules: `time` on the half hour from `10:00` to `17:30`; `date` from today up
+to 6 days ahead; the slot must not have started; `customerName` 1–80
+characters.
+
+**Room slots**
+
+```json
+GET /rooms/room-1/slots?date=2026-11-21
+200 OK
+{"room": {"id": "room-1", "name": "Room 1", "status": "booked"},
+ "date": "2026-11-21",
+ "slots": [{"time": "10:00", "status": "available"},
+           {"time": "10:30", "status": "booked"}, ...]}
+```
+
+**Errors** always have this shape:
+
+```json
+{"error": {"code": "slot_taken", "message": "That slot is already booked."}}
+```
+
+| Status | `code` | When |
+|---|---|---|
+| 400 | `invalid_request` | Body isn't a JSON object, a field is missing or not text, the date or id is malformed |
+| 400 | `invalid_slot` | Time not on a slot, or date outside the 7-day window |
+| 400 | `slot_in_past` | The slot has already started |
+| 404 | `room_not_found` | Unknown room id |
+| 404 | `booking_not_found` | Unknown booking id |
+| 404 | `not_found` | Unknown endpoint |
+| 409 | `room_busy` | The room is busy |
+| 409 | `slot_taken` | The room and slot are already booked |
+| 500 | `server_error` | Unexpected error |
+
+### App code reference
+
+These are the Dart interfaces inside the Flutter app.
 
 ### `BookingRules` — [booking_rules.dart](lib/features/booking/domain/booking_rules.dart)
 
@@ -376,11 +485,36 @@ builds on it: `leadTime` (1 hour), `title` ("Your fitting is in 1 hour"),
 
 ## Postman collection
 
-**Not included, because there are no API endpoints.** The app is
-offline-first and everything runs on the phone. If a backend is added later
-(for example to share bookings between the staff phone and customers'
-phones), a Postman collection should be created for it, together with a
-`BookingRepository` implementation that calls it.
+[`postman/aanchal-boutique-api.postman_collection.json`](postman/aanchal-boutique-api.postman_collection.json)
+covers every endpoint of the [REST API](#rest-api): 16 requests, each with a
+description and test scripts.
+
+| Folder | Requests |
+|---|---|
+| Health | Health check |
+| Rooms | List rooms; room time slots for a day |
+| Bookings | Create booking; get booking; list bookings for a day; list all bookings; room is now booked |
+| Errors | Double booking (409); busy room (409); time not on a slot (400); missing name (400); unknown room (404) |
+| Cancel | Cancel booking (204); room is available again; cancel again (404) |
+
+**Use it**
+
+1. Start the API: `cd server && dart run bin/server.dart`.
+2. In Postman: **Import** → choose the collection file.
+3. Open the collection → **Run** to run all 16 requests in order, or send
+   them one by one.
+
+Variables: `baseUrl` (default `http://localhost:8080`), `date` (set to
+tomorrow automatically before each request) and `bookingId` (saved by
+*Create booking*). The run books Room 1 tomorrow at 10:30 for Umair, checks
+the error cases, then cancels the booking, so it can be run again and again.
+
+From the command line, with Postman's runner Newman:
+`newman run postman/aanchal-boutique-api.postman_collection.json`.
+
+For version 1.0.0, all 16 requests were run against the server in order,
+twice in a row, and each returned the status and error code its tests
+expect.
 
 ## Testing
 
@@ -396,15 +530,18 @@ phones), a Postman collection should be created for it, together with a
 | `test/features/notifications/booking_reminders_test.dart` | Reminder exactly 1 hour before, text, cancel, rebuild |
 | `integration_test/app_flow_test.dart` | On a real device or simulator: book, database row, scheduled reminder, restart, staff cancel |
 | `integration_test/demo_test.dart` | Drives the app for the demo video |
+| `server/test/api_test.dart` | REST API: every endpoint, double booking, busy room, invalid and past slots, cancel and rebook, data kept after restart |
+| `postman/aanchal-boutique-api.postman_collection.json` | The API through Postman (see [Postman collection](#postman-collection)) |
 
 ```bash
 flutter test                                  # 39 tests
 flutter test integration_test -d <device-id>  # on a phone or simulator
+cd server && dart test                        # 11 API tests
 ```
 
 Both integration tests use their own database files, so real bookings are
-never touched. Results for version 1.0.0: all 39 tests pass, and
-`app_flow_test.dart` passes on the iPhone 16 Pro simulator.
+never touched. Results for version 1.0.0: all 39 app tests and all 11 API
+tests pass, and `app_flow_test.dart` passes on the iPhone 16 Pro simulator.
 
 ## Maintenance guide
 
@@ -425,13 +562,14 @@ After any change: `flutter analyze` and `flutter test`.
 | Limitation | Suggested next step |
 |---|---|
 | No login on the Staff tab: anyone holding the phone can cancel bookings | Add a staff PIN or login |
-| Data lives on one phone; uninstalling deletes it | Add a backend or cloud backup to share and protect bookings |
+| The app keeps its data on one phone and doesn't use the REST API yet; uninstalling deletes it | Host the API in `server/` and add a `BookingRepository` in the app that calls it, so bookings are shared and backed up |
 | Reminders go to the phone that made the booking | Collect customer phone numbers and send SMS/WhatsApp reminders from a backend |
 | No reminder for bookings less than 1 hour away | Send a confirmation notification instead |
 | Android may deliver reminders a few minutes late if exact alarms aren't allowed | Ask for the exact-alarm permission in settings |
 | Default Flutter app icon (also on notifications) | Add the boutique's logo |
 | No web version (`sqflite` doesn't run in browsers) | Only needed if a web version is wanted |
-| No iOS file in 1.0.0 | Sign with an Apple Developer account (see [iOS](#ios)) |
+| The iOS build is unsigned | Sign it with the boutique's Apple account to install or publish it (see [iOS](#ios)) |
+| The API has no login | Add an API key or staff login before putting the server on the internet |
 
 ## Troubleshooting
 
@@ -463,5 +601,8 @@ away.
   (for example in a password manager).
 - **Google Play.** Upload `delivery/aanchal-boutique-1.0.0.aab` in the Play
   Console. A store listing, screenshots and a privacy policy are needed there.
-- **iOS.** Needs an Apple Developer account before an iOS file can be built
-  (see [iOS](#ios)).
+- **iOS.** `delivery/aanchal-boutique-1.0.0-ios-unsigned.ipa` must be signed
+  with the boutique's Apple account before it can be installed (see [iOS](#ios)).
+- **API server.** Runs anywhere Dart runs (`dart compile exe bin/server.dart`
+  makes a single program file). Add authentication before exposing it to the
+  internet.
